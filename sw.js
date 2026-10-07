@@ -1,4 +1,4 @@
-const APP="jml-app-v2",TILES="jml-tiles";
+const APP="jml-app-v4",TILES="jml-tiles";
 const SHELL=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png",
 "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css","https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(APP).then(c=>Promise.all(SHELL.map(u=>c.add(u).catch(()=>{})))).then(()=>self.skipWaiting()))});

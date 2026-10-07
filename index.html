@@ -254,6 +254,7 @@ main>section{margin-bottom:40px}
 .nv-next .nm{font-size:20px;font-weight:700;line-height:1.3}
 .nv-next .row{font-size:15px;margin-top:1px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .nv-next .row b{font-size:17px}
+.nv-next .row{display:flex;flex-wrap:wrap;column-gap:14px}.nv-next .row .g{white-space:nowrap}
 .nv-body{flex:1;display:flex;min-height:0}
 #nvmap{flex:1;min-height:0}
 .nv-panel{width:340px;display:flex;flex-direction:column;border-left:1px solid var(--line);background:var(--panel);min-height:0}
@@ -269,6 +270,10 @@ main>section{margin-bottom:40px}
 .nv-li .km{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .nv-foot{padding:12px 14px 16px;font-size:12px;color:var(--muted)}
 .nv-foot button{font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;margin-right:8px}
+.nv-w{margin-top:4px;font-size:13px;color:#A0331F}
+.nv-i{font:italic 700 13px Georgia,serif!important;width:26px;height:26px;padding:0!important;border-radius:50%!important;vertical-align:middle}
+.nv-tip{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font-size:13px;line-height:1.6}
+.nv-tip ol{margin:6px 0;padding-left:18px}.nv-tip li{margin:4px 0}.nv-tip span{color:var(--muted);font-size:12px}.nv-tip p{margin:6px 0 0;color:var(--muted);font-size:12px}
 .nv-loc{background:#fff;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.25);width:34px;height:34px;display:grid;place-items:center;cursor:pointer;border:0;padding:0}
 .nv-loc svg{width:18px;height:18px}
 
@@ -595,14 +600,17 @@ const a0=idxAt(r,P[0].d),ai=idxAt(r,cur.d);layers.done.setLatLngs(r.LL.slice(a0,
 let h;
 if(!nx){h=`<div class="lb">今天的終點</div><div class="nm">${end.w[0]}</div><div class="row">表定 <b>${hm(end.arr)}</b> 抵達</div>`;layers.seg.setLatLngs([]);layers.segC.setLatLngs([]);if(fit)map.setView(r.LL[ai],15)}
 else{const mins=Math.round(nx.arr-(cur.dep??cur.arr));const b=idxAt(r,nx.d),part=r.LL.slice(ai,b+1);layers.seg.setLatLngs(part);layers.segC.setLatLngs(part);
-h=`<div class="lb">${i===0?"出發後的第一站":"下一站"}</div><div class="nm">${nx.w[0]}</div><div class="row">約 <b>${mins}</b> 分鐘・表定 <b>${hm(nx.arr)}</b></div>`;
+const[su,sd]=climb(r,cur.d,nx.d);const isToday=today()===DATE[st.day],nm_=nowMin();const eta=isToday?nm_+mins:null;
+const endEta=isToday?nm_+(end.arr-(cur.dep??cur.arr)):null;
+const ws=[];if(isToday){(DEAD[st.rid][st.day]||[]).forEach(([tt,txt])=>{if(endEta>mm(tt))ws.push(`${txt}，預估 ${hm(endEta)} 才到`);else if(endEta>mm(tt)-15)ws.push(`${txt}，預估 ${hm(endEta)} 到，時間很緊`)});if(endEta>mm(SUNSET[st.day])-30)ws.push(`預估 ${hm(endEta)} 到終點，接近日落 ${SUNSET[st.day]}`)}
+h=`<div class="lb">${i===0?"出發後的第一站":"下一站"}</div><div class="nm">${nx.w[0]}</div><div class="row"><span class="g">約 <b>${mins}</b> 分鐘　↑${Math.round(su)} ↓${Math.round(sd)} m</span><span class="g">${eta!=null?`預估 <b>${hm(eta)}</b>　`:""}表定 <b>${hm(nx.arr)}</b></span></div>${ws.map(w=>`<div class="nv-w">${w}</div>`).join("")}`;
 if(fit)map.fitBounds(L.latLngBounds(part).pad(.3),{maxZoom:16})}
 document.getElementById("nvnext").innerHTML=h;
 const[u,dn]=climb(r,cur.d,end.d);
-document.getElementById("nvsum").innerHTML=nx?`終點 <b>${end.w[0]}</b> ${hm(end.arr)}・${((end.d-cur.d)/1000).toFixed(1)} km・↑${Math.round(u)} ↓${Math.round(dn)}`:`今天的路線已走完`;
+document.getElementById("nvsum").innerHTML=nx?`終點 <b>${end.w[0]}</b>・${((end.d-cur.d)/1000).toFixed(1)} km・↑${Math.round(u)} ↓${Math.round(dn)}`:`今天的路線已走完`;
 const L_=document.getElementById("nvlist");
-L_.innerHTML=P.map((p,k)=>`<div class="nv-li ${k<i?"past":""} ${k===i?"sel":""}" data-i="${k}"><span class="pt">${hm(k===0?p.dep:p.arr)}</span><span class="nm">${p.w[0]}</span><span class="km">${(p.d/1000).toFixed(1)} km</span></div>`).join("")+`<div class="nv-foot">${"caches" in window&&location.protocol==="https:"?`<button type="button" id="nvdl">離線地圖</button>`:""}<span id="nvdlst">${window.__dlMsg||""}</span>${st.fix?`<div style="margin-top:6px">${new Date(st.fix.t).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Taipei"})} 定位・精度約 ${Math.round(st.fix.acc)} m${st.fix.off>100?`・離路線約 ${Math.round(st.fix.off)} m`:""}</div>`:""}</div>`;
-const dl=document.getElementById("nvdl");if(dl)dl.onclick=downloadTiles;
+L_.innerHTML=P.map((p,k)=>`<div class="nv-li ${k<i?"past":""} ${k===i?"sel":""}" data-i="${k}"><span class="pt">${hm(k===0?p.dep:p.arr)}</span><span class="nm">${p.w[0]}</span><span class="km">${(p.d/1000).toFixed(1)} km</span></div>`).join("")+`<div class="nv-foot">${"caches" in window&&location.protocol==="https:"?`<button type="button" id="nvdl">離線地圖</button>`:""}<button type="button" class="nv-i" id="nvinfo" aria-expanded="false" aria-label="離線使用說明">i</button><span id="nvdlst">${window.__dlMsg||""}</span><div class="nv-tip" id="nvtip" hidden><b>離線使用</b><ol><li>加入主畫面<br>iPhone：分享 → 加入主畫面<br>Android：⋮ → 加到主畫面</li><li>從主畫面圖示打開，選好名字，按「離線地圖」等到完成<br><span>iPhone 的主畫面和 Safari 資料分開，要在圖示這邊做</span></li><li>開飛航模式打開一次，看得到就完成</li></ol><p>導航仍建議用登山 App 下載離線路線與地圖。</p></div>${st.fix?`<div style="margin-top:6px">${new Date(st.fix.t).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Taipei"})} 定位・精度約 ${Math.round(st.fix.acc)} m${st.fix.off>100?`・離路線約 ${Math.round(st.fix.off)} m`:""}</div>`:""}</div>`;
+const dl=document.getElementById("nvdl");if(dl)dl.onclick=downloadTiles;const ib=document.getElementById("nvinfo"),tp=document.getElementById("nvtip");ib.onclick=()=>{tp.hidden=!tp.hidden;ib.setAttribute("aria-expanded",!tp.hidden);if(!tp.hidden)tp.scrollIntoView({block:"nearest"})};
 const sel=L_.querySelector(".sel");if(sel&&fit)sel.scrollIntoView({block:"nearest"});
 map.invalidateSize({pan:false})}
 document.getElementById("nvlist").addEventListener("click",e=>{const li=e.target.closest(".nv-li");if(!li)return;st.sel=+li.dataset.i;try{localStorage.setItem(skey(),st.sel)}catch(x){}render(true)});
